@@ -1,9 +1,27 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 import time
+from enum import Enum
+
+class Direction(Enum):
+  LEFT_UP = 1
+  UP = 2
+  RIGHT_UP = 3
+  LEFT = 4
+  RIGHT = 5
+  LEFT_DOWN = 6
+  DOWN = 7
+  RIGHT_DOWN = 8
 
 class NeoquestRunner:
   def __init__(self):
-    self.driver = webdriver.Chrome('/mnt/d/Downloads/chromedriver_win32/chromedriver.exe')
+#    adblockpath = 'D:\\adblock\\1.13.4_0\\' #'\\Users\\jorge\\AppData\\Local\\Google\\Chrome\\User\\ Data\\Default\\Extensions\\cfhdojbkjhnklbpkdaibdccddilifddb\\1.13.4_0\\'
+    chrome_options = Options()
+#    chrome_options.add_argument('load-extension=' + adblockpath)
+    
+    self.driver = webdriver.Chrome('/mnt/d/Downloads/chromedriver_win32/chromedriver.exe',
+                                   chrome_options=chrome_options)
+    self.driver.create_options()
 
   def login(self, login_file_name):
     login_file = open(login_file_name, "r")
@@ -23,10 +41,12 @@ class NeoquestRunner:
   def logout(self):
     self.driver.quit()
 
-
   def newgame(self):
     self.driver.get('http://www.neopets.com/games/neoquest/neoquest.phtml?create=1&game_diff=0')
     time.sleep(.3)
+    self.load_view()
+
+  def load_view(self):
     self.driver.get('http://www.neopets.com/games/neoquest/neoquest.phtml')
     time.sleep(.3)
 
@@ -58,5 +78,17 @@ class NeoquestRunner:
   def choose_starting_wand(self):
     self.driver.get('http://www.neopets.com/games/neoquest/neoquest.phtml?weapon_choice=5')
     time.sleep(.3)
+
+  def send_move(self, direction):
+    #Directions:
+    # 1 2 3
+    # 4   5
+    # 6 7 8
+    self.driver.get('http://www.neopets.com/games/neoquest/neoquest.phtml?action=move&movedir='
+                     + str (direction))
+    time.sleep(.3)
+
+
+
 
   
