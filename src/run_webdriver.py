@@ -88,7 +88,19 @@ class NeoquestRunner:
                      + str (direction))
     time.sleep(.3)
 
-
+  def get_map(self):
+    output = {}
+    map_tbody = self.driver.find_element_by_class_name("contentModule") \
+                           .find_elements_by_xpath('.//table//table')[0] \
+                           .find_elements_by_tag_name("tr")[1:-1]
+    for i in range(-3, 4):
+      row = map_tbody[i+3]
+      tds = row.find_elements_by_tag_name("td")[1:-1]
+      for j in range(-3, 4):
+        td = tds[j+3]
+        result = td.find_element_by_tag_name("img").get_attribute("src")
+        output[(i,j)] = result
+    return output
 
 
   
