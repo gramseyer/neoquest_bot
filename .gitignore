@@ -3,4 +3,4 @@ logindata
 *.swp
 /*.py
 *.DS_STORE
-src/config.ini
+*.ini
