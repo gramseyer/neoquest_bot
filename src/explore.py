@@ -13,7 +13,9 @@ def run_game():
   driver = run_webdriver.NeoquestRunner()
   driver.login("logindata")
   driver.load_view()
-
+  
+  start_map = driver.get_map()
+  overworld_map.initialize_map(start_map, spawn_location)
   loc = spawn_location.copy()
   driver.set_mode_hunting()
   hunting = True

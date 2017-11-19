@@ -14,33 +14,83 @@ class Location:
   def copy(self):
     return Location(self.coord, self.cur_map)
 
-  #Maybe outside of overworld don't go down cave until you've explored everything?
+  def move_target_is_known_passable(self, direction, world):
+    (dx, dy) = Direction.get_direction_offset(direction)
+    target_coord = (self.coord[0] + dx, self.coord[1] + dy)
+#    if target_coord not in self.cur_map.map_data.keys():
+ #     return False
+    target_tile = self.cur_map.map_data[target_coord]
+    if world.is_passability_known(target_tile) and world.is_passable(target_tile):
+      return True
+    return False
+  
+  def move_target_is_known_impassable(self, direction, world):
+    (dx, dy) = Direction.get_direction_offset(direction)
+    target_coord = (self.coord[0] + dx, self.coord[1] + dy)
+  #  if target_coord not in self.cur_map.map_data.keys():
+   #   return False
+    target_tile = self.cur_map.map_data[target_coord]
+    if world.is_passability_known(target_tile) and not world.is_passable(target_tile):
+      return True
+    return False #yolo idioms
 
+  def determine_passability_new_tile(self, observed_map, direction, world):
+    old_tile = self.cur_map.map_data[self.coord]
+    (dx, dy) = Direction.get_direction_offset(direction)
+    new_tile = self.cur_map.map_data[(self.coord[0] + dx, self.coord[1] + dy)]
+    if observed_map[(0, 0)] == new_tile:
+      world.set_passability(new_tile, True)
+      return True
+    elif observed_map[(0, 0)] == old_tile:
+      world.set_passability(new_tile, False)
+      return False
+    print "What the fuck"
+    return False
+
+  #Maybe outside of overworld don't go down cave until you've explored everything?
   # Returns whether or not we moved successfully
   def process_observed_data(self, observed_map, direction, world):
-    diff_count = 0
-    unknown_count = 0
-    for key in observed_map.keys():
-      new_key = (key[0] + self.coord[0], key[1] + self.coord[1])
-      if new_key in self.cur_map.map_data.keys():
-        if observed_map[key] != self.cur_map.map_data[new_key]:
-          diff_count = diff_count + 1
-          if key == (0, 0):
-            diff_count = diff_count + 5 # catch the case where we try to move onto an isolated impassable tile
-      else:
-        unknown_count = unknown_count + 1
-    
-    if diff_count >= 3 or unknown_count > 10:  #We're not going to have more than 1 or two changes externally
-      (dx, dy) = Direction.get_direction_offset(direction)
-      self.cur_map.add_data(observed_map, (self.coord[0] + dx, self.coord[1] + dy))
-      world.set_passability(observed_map[(0, 0)], True)
-      print "move successful"
+    (dx, dy) = Direction.get_direction_offset(direction)
+    target_coord = (self.coord[0] + dx, self.coord[1] + dy)
+    if self.move_target_is_known_passable(direction, world):
+      self.cur_map.add_data(observed_map, target_coord)
+      print "cached tile: move successful"
       return True
-    else:
+    if self.move_target_is_known_impassable(direction, world):
       self.cur_map.add_data(observed_map, self.coord)
-      world.set_passability(observed_map[(0, 0)], False)
-      print "move failed"
+      print "cached tile: move failed"
       return False
+    #Move target is new tile
+    if self.determine_passability_new_tile(observed_map, direction, world):
+      print "new tile: move successful"
+      self.cur_map.add_data(observed_map, target_coord)
+      return True
+    print "new tile: move failed"
+    self.cur_map.add_data(observed_map, self.coord)
+    return False
+   # diff_count = 0
+   # unknown_count = 0
+#    for key in observed_map.keys():
+#      new_key = (key[0] + self.coord[0], key[1] + self.coord[1])
+#      if new_key in self.cur_map.map_data.keys():
+#        if observed_map[key] != self.cur_map.map_data[new_key]:
+#          diff_count = diff_count + 1
+#          if key == (0, 0):
+#            diff_count = diff_count + 5 # catch the case where we try to move onto an isolated impassable tile
+#      else:
+#        unknown_count = unknown_count + 1
+#    
+#    if diff_count >= 3 or unknown_count > 10:  #We're not going to have more than 1 or two changes externally
+#      (dx, dy) = Direction.get_direction_offset(direction)
+#      self.cur_map.add_data(observed_map, (self.coord[0] + dx, self.coord[1] + dy))
+#      world.set_passability(observed_map[(0, 0)], True)
+#      print "move successful"
+#      return True
+#    else:
+#      self.cur_map.add_data(observed_map, self.coord)
+#      world.set_passability(observed_map[(0, 0)], False)
+#      print "move failed"
+#      return False
 
   def process_and_move(self, observed_map, direction, world):
     if self.process_observed_data(observed_map, direction, world):
@@ -54,6 +104,12 @@ class NQMap:
     self.mapname = mapname
     self.warp_map = {}
     self.warp_unmapped = []
+
+  def initialize_map(self, map_data, current_loc):
+    if len (self.map_data) > 0:
+      print "INITIALIZING NONEMPTY MAP!!!"
+    for key in map_data.keys():
+      self.map_data[(key[0] + current_loc.coord[0], key[1] + current_loc.coord[1])] = map_data[key]
 
   def add_warp(self, cur_coord, new_loc):
     self.warp_map[cur_coord] = new_loc
@@ -99,6 +155,9 @@ class NQWorld:
 
   def add_map(self, name):
     self.maps[name] = NQMap(name)
+
+  def is_passability_known(self, tile):
+    return tile in self.passability.keys()
 
   def set_passability(self, tile, passable):
     self.passability[tile] = passable
