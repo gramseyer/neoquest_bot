@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import time
 from enum import Enum
+import configparser
 
 class Direction(Enum):
   LEFT_UP = 1
@@ -27,18 +28,33 @@ class Direction(Enum):
 
 class NeoquestRunner:
   def __init__(self):
-    adblockpath = 'D:\\adblock\\1.13.4_0\\'
-    chrome_options = Options()
-    chrome_options.add_argument('load-extension=' + adblockpath)
+    self.config = configparser.ConfigParser()
+    self.config.read('config.ini')
+
+    user = 'JENNY'
     
-    self.driver = webdriver.Chrome('/mnt/d/Downloads/chromedriver_win32/chromedriver.exe',
-                                   chrome_options=chrome_options)
+    adblockpath = self.config[user]['adblockpath']
+    chromepath = self.config[user]['chromepath']
+
+    chrome_options = Options()
+
+    if user == 'JENNY':
+      self.driver = webdriver.Chrome()
+    else:
+      chrome_options.add_argument('load-extension=' + adblockpath)
+      self.driver = webdriver.Chrome(chromepath, chrome_options=chrome_options)
+
+    print "boo"
+
     self.driver.create_options()
 
   def login(self, login_file_name):
-    login_file = open(login_file_name, "r")
-    username = login_file.readline().strip()
-    password = login_file.readline().strip()
+    #login_file = open(login_file_name, "r")
+    #username = login_file.readline().strip()
+    #password = login_file.readline().strip()
+    username = self.config['NEOPETS']['username']
+    password = self.config['NEOPETS']['password']
+
     self.driver.get('http://www.neopets.com/login/index.phtml')
     time.sleep(.3)
     username_div = self.driver.find_element_by_class_name("welcomeLoginUsernameInput")
@@ -202,4 +218,11 @@ class NeoquestRunner:
     form = content_div.find_element_by_tag_name("form")
     form.submit()
 
+def main():
+  nq = NeoquestRunner()
+  nq.login('potate')
+  return
+
+if __name__ == "__main__":
+  main()
     
