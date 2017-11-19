@@ -166,3 +166,40 @@ class NeoquestRunner:
       if "Flee" in link.text:
         link.click()
         return
+
+  def battle_enemy_health(self):
+    content_div = self.__get_content_module()
+    status_row = content_div.find_elements_by_tag_name("tr")[3]
+    td = status_row.find_elements_by_tag_name("td")[1]
+    health_str = td.text[td.text.find(":"): td.text.find("/")]
+    return int(health_str)
+
+  def player_health(self):
+    content_div = self.__get_content_module()
+    health_str = content_div.text[content_div.text.find(":"): content_div.text.find("/")]
+    return int(health_str)
+
+  def battle_enemy_level(self):
+    content_div = self.__get_content_module()
+    status_row = content_div.find_elements_by_tag_name("tr")[3]
+    td = status_row.find_elements_by_tag_name("td")[1]
+    level_str = td.text[td.text.find("Level:")+6:]
+    return int(level_str)
+
+  def is_battle_defeat_screen(self):
+    content_div = self.__get_content_module()
+    if "Click here to see the aftermath" in content_div.text:
+      return True
+    return False
+
+  def battle_defeat_resolve(self):
+    content_div = self.__get_content_module()
+    links = content_div.find_elements_by_tag_name("a")
+    for link in links:
+      if "Click here to see the aftermath" in link.text:
+        link.click()
+    content_div = self.__get_content_module()
+    form = content_div.find_element_by_tag_name("form")
+    form.submit()
+
+    
