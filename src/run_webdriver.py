@@ -98,7 +98,7 @@ class NeoquestRunner:
     # 6 7 8
     self.driver.get('http://www.neopets.com/games/neoquest/neoquest.phtml?action=move&movedir='
                      + str (direction))
-    time.sleep(.3)
+    time.sleep(.5)
 
   def __get_content_module(self):
     return self.driver.find_element_by_class_name("contentModule")
@@ -116,7 +116,12 @@ class NeoquestRunner:
         td = tds[j+3]
         result = td.find_element_by_tag_name("img").get_attribute("src")
         output[(j, i)] = result[32:-4]
+    output[(0, 0)] = output[(0, 0)][5:]
     return output
+
+  def can_warp(self):
+    content_div = self.__get_content_module()
+    return ("Go!" in content_div.text)
   
   def is_battle_start_screen(self):
     content_div = self.__get_content_module()
@@ -126,9 +131,7 @@ class NeoquestRunner:
 
   def is_battle_victory_screen(self):
     content_div = self.__get_content_module()
-    if "Click here to see what you found" in content_div.text:
-      return True
-    return False
+    return ("Click here to see what you found" in content_div.text)
 
   def battle_victory_resolve(self):
     content_div = self.__get_content_module()
@@ -176,7 +179,8 @@ class NeoquestRunner:
 
   def player_health(self):
     content_div = self.__get_content_module()
-    health_str = content_div.text[content_div.text.find(":"): content_div.text.find("/")]
+    health_str = content_div.text[content_div.text.find("Health:")+7: content_div.text.find("/")]
+    print health_str
     return int(health_str)
 
   def battle_enemy_level(self):
@@ -202,4 +206,22 @@ class NeoquestRunner:
     form = content_div.find_element_by_tag_name("form")
     form.submit()
 
-    
+  def set_mode_sneaking(self):
+    self.driver.get("http://www.neopets.com/games/neoquest/neoquest.phtml?movetype=3")
+    time.sleep(.3)
+
+  def set_mode_hunting(self):
+    self.driver.get("http://www.neopets.com/games/neoquest/neoquest.phtml?movetype=2")
+    time.sleep(.3)
+
+  def initiate_talk(self):
+    content_div = self.__get_content_module()
+    links = content_div.find_elements_by_tag_name("a")
+    for link in links:
+      if "Talk to" in link.text:
+        link.click()
+
+  def end_talk(self):
+    content_div = self.__get_content_module()
+    form = content_div.find_element_by_tag_name("form")
+    form.submit()
