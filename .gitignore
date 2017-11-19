@@ -2,3 +2,5 @@ logindata
 *.pyc
 *.swp
 /*.py
+*.DS_STORE
+*.ini
