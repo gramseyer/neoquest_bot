@@ -37,21 +37,16 @@ class NeoquestRunner:
     chromepath = self.config[user]['chromepath']
 
     chrome_options = Options()
+    chrome_options.add_argument('load-extension=' + adblockpath)
 
     if user == 'JENNY':
-      self.driver = webdriver.Chrome()
+      self.driver = webdriver.Chrome(chrome_options=chrome_options)
     else:
-      chrome_options.add_argument('load-extension=' + adblockpath)
       self.driver = webdriver.Chrome(chromepath, chrome_options=chrome_options)
-
-    print "boo"
 
     self.driver.create_options()
 
   def login(self, login_file_name):
-    #login_file = open(login_file_name, "r")
-    #username = login_file.readline().strip()
-    #password = login_file.readline().strip()
     username = self.config['NEOPETS']['username']
     password = self.config['NEOPETS']['password']
 
