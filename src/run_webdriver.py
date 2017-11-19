@@ -13,11 +13,23 @@ class Direction(Enum):
   DOWN = 7
   RIGHT_DOWN = 8
 
+  @staticmethod
+  def get_direction_offset(direction):
+    return { Direction.LEFT_UP    : (-1, -1),
+             Direction.UP         : (0, -1),
+             Direction.RIGHT_UP   : (1, -1),
+             Direction.LEFT       : (-1, 0),
+             Direction.RIGHT      : (1, 0),
+             Direction.LEFT_DOWN  : (-1, 1),
+             Direction.DOWN       : (0, 1),
+             Direction.RIGHT_DOWN : (1, 1),
+           }[direction]
+
 class NeoquestRunner:
   def __init__(self):
-#    adblockpath = 'D:\\adblock\\1.13.4_0\\' #'\\Users\\jorge\\AppData\\Local\\Google\\Chrome\\User\\ Data\\Default\\Extensions\\cfhdojbkjhnklbpkdaibdccddilifddb\\1.13.4_0\\'
+    adblockpath = 'D:\\adblock\\1.13.4_0\\'
     chrome_options = Options()
-#    chrome_options.add_argument('load-extension=' + adblockpath)
+    chrome_options.add_argument('load-extension=' + adblockpath)
     
     self.driver = webdriver.Chrome('/mnt/d/Downloads/chromedriver_win32/chromedriver.exe',
                                    chrome_options=chrome_options)
@@ -88,6 +100,10 @@ class NeoquestRunner:
                      + str (direction))
     time.sleep(.3)
 
+  def __get_content_module(self):
+    return self.driver.find_element_by_class_name("contentModule")
+
+  # ONLY FOR MAP SCREENS
   def get_map(self):
     output = {}
     map_tbody = self.driver.find_element_by_class_name("contentModule") \
@@ -99,8 +115,54 @@ class NeoquestRunner:
       for j in range(-3, 4):
         td = tds[j+3]
         result = td.find_element_by_tag_name("img").get_attribute("src")
-        output[(i,j)] = result
+        output[(j, i)] = result[32:-4]
     return output
-
-
   
+  def is_battle_start_screen(self):
+    content_div = self.__get_content_module()
+    if "You are attacked by" in content_div.text:
+      return True
+    return False
+
+  def is_battle_victory_screen(self):
+    content_div = self.__get_content_module()
+    if "Click here to see what you found" in content_div.text:
+      return True
+    return False
+
+  def battle_victory_resolve(self):
+    content_div = self.__get_content_module()
+    links = content_div.find_elements_by_tag_name("a")
+    for link in links:
+      if "Click here to see what you found" in link.text:
+        link.click()
+    content_div = self.__get_content_module()
+    form = content_div.find_element_by_tag_name("form")
+    form.submit()
+
+  def battle_start(self):
+    content_div = self.driver.find_element_by_class_name("contentModule")
+    form = content_div.find_element_by_tag_name("form")
+    form.submit()
+
+  def __battle_get_actions(self):
+    content_div = self.driver.find_element_by_class_name("contentModule")
+    table = content_div.find_element_by_tag_name("table")
+    trs = table.find_elements_by_tag_name("tr")
+    action_block = trs[-1]
+    action_links = action_block.find_elements_by_tag_name("a")
+    return action_links
+
+  def battle_action_attack(self):
+    action_links = self.__battle_get_actions()
+    for link in action_links:
+      if "Attack" in link.text:
+        link.click()
+        return
+
+  def battle_action_flee(self):
+    action_links = self.__battle_get_actions()
+    for link in action_links:
+      if "Flee" in link.text:
+        link.click()
+        return
